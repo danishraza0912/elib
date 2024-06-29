@@ -4,6 +4,7 @@ import userModel from "./userModel"
 import bcrypt from 'bcrypt'
 import { config } from "../config/config"
 import { sign } from "jsonwebtoken"
+import { User } from "./userTypes"
 
 const createdUser = async(req : Request, res: Response, next: NextFunction)=>{
     const {name, email, password}= req.body
@@ -19,16 +20,28 @@ const createdUser = async(req : Request, res: Response, next: NextFunction)=>{
             throw error
     }
     else{
+        let newuser: User
        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-       const saltround =10
-       const hashpassword= await bcrypt.hash(password, saltround)
-       const newuser= await userModel.create({
-            name,
-            email, 
-            password: hashpassword
-        })
-       const token =  sign({ sub: newuser._id}, config.jwtSecret as string, { expiresIn: "7d"})
-       res.json({accessToken: token})
+       try{
+            const saltround =10
+        const hashpassword= await bcrypt.hash(password, saltround)
+         newuser= await userModel.create({
+                name,
+                email, 
+                password: hashpassword
+            })
+        } catch(err)
+        {
+            return (createHttpError(500,"User not created"))
+        }
+
+        try{
+            const token =  sign({ sub: newuser._id}, config.jwtSecret as string, { expiresIn: "7d"})
+            res.json({accessToken: token})
+        } catch(err)
+        {
+            return (createHttpError(500,"User not signed in"))
+        }
     }
 }
 
