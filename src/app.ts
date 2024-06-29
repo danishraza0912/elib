@@ -11,6 +11,7 @@ app.get("/", (req, res)=>{
     res.json({message: "Listening on Port" })
 })
 
+app.use(express.json())
 app.use("/api/users", userRouter)
 
 app.use(globalErrorHandler)
