@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from "express"
 import createHttpError from "http-errors"
 import userModel from "./userModel"
-
+import bcrypt from 'bcrypt'
+import { config } from "../config/config"
+import { sign } from "jsonwebtoken"
 
 const createdUser = async(req : Request, res: Response, next: NextFunction)=>{
     const {name, email, password}= req.body
@@ -18,12 +20,15 @@ const createdUser = async(req : Request, res: Response, next: NextFunction)=>{
     }
     else{
        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       const saltround =10
+       const hashpassword= await bcrypt.hash(password, saltround)
        const newuser= await userModel.create({
             name,
             email, 
-            password
+            password: hashpassword
         })
-        res.send(newuser)
+       const token =  sign({ sub: newuser._id}, config.jwtSecret as string, { expiresIn: "7d"})
+       res.json({accessToken: token})
     }
 }
 
