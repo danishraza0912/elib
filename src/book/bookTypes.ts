@@ -1,7 +1,6 @@
 import { User } from "../user/userTypes";
 
 export default interface Book{
-    _id: string;
     title: string;
     name: string;
     author: User;

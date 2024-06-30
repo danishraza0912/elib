@@ -5,12 +5,13 @@ import { config } from "./config";
 const connectdb =async ()=>{
     try{
         mongoose.connection.on("connected",()=>{
-            console.log("Connected to database");
+            const dbname = config.databaseurl || "new"
+            const database = dbname.split('/').at(-1) 
+            console.log(`Connected to database ${database}.`);
             
         })  
         mongoose.connection.on("error", (err)=>{
             console.log("Failed to connect db", err);
-            
         })
         await mongoose.connect(config.databaseurl as string)
     }
