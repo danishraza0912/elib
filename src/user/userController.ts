@@ -30,9 +30,10 @@ const createdUser = async(req : Request, res: Response, next: NextFunction)=>{
                 email, 
                 password: hashpassword
             })
+            return next(createHttpError(201,"User Created"))
         } catch(err)
         {
-            return (createHttpError(500,"User not created"))
+            return next(createHttpError(500,"User not created"))
         }
 
         try{
@@ -40,9 +41,41 @@ const createdUser = async(req : Request, res: Response, next: NextFunction)=>{
             res.json({accessToken: token})
         } catch(err)
         {
-            return (createHttpError(500,"User not signed in"))
+            return next(createHttpError(500,"User not signed in"))
+        }
+    }
+}
+ 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const loginuser = async(req : Request, res: Response, next: NextFunction)=>{
+    const {email, password} =req.body
+    if(!email || !password)
+    {
+        return next(createHttpError(400,"All details are required"))
+    }
+    const user= await userModel.findOne({email})
+    if(!user)
+    {
+        return next(createHttpError(404,"User not found"))
+    }
+    else{
+        const checkPassword= await bcrypt.compare(password, user.password)
+    if(!checkPassword)
+        {
+            return next(createHttpError(400,"Username or Password is wrong"))
+        }
+        else{
+        try{
+            const token =  sign({ sub: user._id}, config.jwtSecret as string, { expiresIn: "7d"})
+            res.json({accessToken: token,
+                password
+            })
+        } catch(err)
+        {
+            return next(createHttpError(500,"User not signed in"))
+        }
         }
     }
 }
 
-export default createdUser
+export { createdUser, loginuser}
