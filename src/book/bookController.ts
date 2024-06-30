@@ -40,6 +40,7 @@ const createdBook = async(req : Request, res: Response, next: NextFunction)=>{
     console.log(newBook);
     await fs.promises.unlink(filepath)
     await fs.promises.unlink(pdffilepath)
+   
     } catch(err)
     {
         console.log(err);

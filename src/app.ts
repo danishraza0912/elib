@@ -5,6 +5,7 @@ import userRouter from "./user/userRouter";
 import bookRouter from "./book/bookRouter";
 import multer from "multer";
 import path from "path";
+import authenticate from "./middlewares/authenticate";
 
 const app = express()
 
@@ -21,7 +22,7 @@ const upload= multer({
     limits : {fileSize: 3e7}
 })
 
-app.use("/api/books", upload.fields([
+app.use("/api/books",authenticate, upload.fields([
     {
         name: "coverImage",
         maxCount:1
