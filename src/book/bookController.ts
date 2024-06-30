@@ -5,6 +5,7 @@ import path from "path"
 import createHttpError from "http-errors"
 import bookModel from "./bookModel"
 import fs from 'fs'
+import { AuthRequest } from "../middlewares/authenticate"
 
 const createdBook = async(req : Request, res: Response, next: NextFunction)=>{
     const files = req.files as { [fieldname: string]: Express.Multer.File[] }
@@ -29,10 +30,11 @@ const createdBook = async(req : Request, res: Response, next: NextFunction)=>{
         format: fileMimeType
     })
     const {title, genre}= req.body
+    const _req= req as AuthRequest
     const newBook = await bookModel.create({
         title,
         genre,
-        author:"66802a8823d4c0360cba8729",
+        author:_req.userId,
         name:"Book 1",
         coverImage:(await coverimage).secure_url,
         file: (await pdffile).secure_url
