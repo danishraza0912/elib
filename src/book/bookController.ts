@@ -61,7 +61,6 @@ const updateBook = async(req : Request, res: Response, next: NextFunction)=>{
     if(book.author.toString()!=_req.userId)
         return next(createHttpError(403,"You are forbidden to uodate Book."))
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    console.log(files);
     let fileUrl= "abcd"
     if(files.coverImage)
     {
@@ -75,8 +74,6 @@ const updateBook = async(req : Request, res: Response, next: NextFunction)=>{
     });
    
     fileUrl = uploadResult.secure_url 
-    console.log(fileUrl);
-    
     await fs.promises.unlink(filePath);
     }
     let pdfurl="abcd"
@@ -108,4 +105,39 @@ const updateBook = async(req : Request, res: Response, next: NextFunction)=>{
 
     res.json(updatedBook)
 }
-export {createdBook, updateBook}
+
+const getOneBook= async(req : Request, res: Response, next: NextFunction)=>{
+   const bookId = req.params.bookId
+   const book = await bookModel.findOne({_id: bookId})
+   if(!book)
+    return next(createHttpError(400,"Book not found."))
+   res.send(book)
+}
+const getAllBook = async(req : Request, res: Response, next: NextFunction)=>{
+   const book = await bookModel.find()
+   if(!book)
+    return next(createHttpError(404,"Book not found."))
+   res.send(book)
+}       
+
+const deleteBook = async(req : Request, res: Response, next: NextFunction)=>{
+    const bookId = req.params.id
+    const book = await bookModel.findOne({_id: bookId})
+    if(!book)
+        return next(createHttpError(404,"Book not found."))
+    const _req = req as AuthRequest
+    if(book.author.toString()!=_req.userId)
+        return next(createHttpError(403,"You are not authorised to delete the book."))
+    const coverImageSplit = book.coverImage.split('/')
+    const coverImagePublicId = coverImageSplit.at(-2)+'/'+coverImageSplit.at(-1)?.split('.').at(-2)
+    await cloudinary.uploader.destroy(coverImagePublicId);
+    const bookFileSplits = book.file.split("/");
+    const bookFilePublicId =
+        bookFileSplits.at(-2) + "/" + bookFileSplits.at(-1);
+        await cloudinary.uploader.destroy(bookFilePublicId, {
+    resource_type: "raw",
+    });
+    await bookModel.deleteOne({_id:bookId})
+    res.send({message: `${bookId} deleted successfully`})
+}
+export {createdBook, updateBook, getOneBook, getAllBook, deleteBook}
