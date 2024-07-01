@@ -1,8 +1,9 @@
 import  express  from "express";
-import createdBook from "./bookController";
+import  { createdBook, updateBook } from "./bookController";
 
 const bookRouter = express.Router()
 
 bookRouter.post("/", createdBook)
+bookRouter.patch("/:id", updateBook)
 
 export default bookRouter

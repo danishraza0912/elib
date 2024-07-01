@@ -50,4 +50,62 @@ const createdBook = async(req : Request, res: Response, next: NextFunction)=>{
     }
 }
 
-export default createdBook
+const updateBook = async(req : Request, res: Response, next: NextFunction)=>{
+  
+    const {title, genre, name} =req.body
+    const bookId= req.params.id
+    const book = await bookModel.findOne({_id: bookId})
+    if(!book)
+        return next(createHttpError(404,"Book not found."))
+    const _req = req as AuthRequest
+    if(book.author.toString()!=_req.userId)
+        return next(createHttpError(403,"You are forbidden to uodate Book."))
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    console.log(files);
+    let fileUrl= "abcd"
+    if(files.coverImage)
+    {
+    const filename = files.coverImage[0].filename 
+    const filePath = path.join(files.coverImage[0].destination,filename)
+    const converMimeType = files.coverImage[0].mimetype.split('/').at(-1)
+    const uploadResult = await cloudinary.uploader.upload(filePath, {
+    filename_override: filename,
+    folder: "book-covers",
+    format: converMimeType,
+    });
+   
+    fileUrl = uploadResult.secure_url 
+    console.log(fileUrl);
+    
+    await fs.promises.unlink(filePath);
+    }
+    let pdfurl="abcd"
+    if(files.file){
+        const pdfname = files.file[0].filename
+        const bookFilePath = path.join(files.file[0].destination,pdfname)
+        const pdfMimType = files.file[0].mimetype.split('/').at(-1)
+        const uploadResultPdf = await cloudinary.uploader.upload(bookFilePath, {
+            resource_type: "raw",
+            filename_override: pdfname,
+            folder: "book-pdfs",
+            format: pdfMimType,
+        });
+         pdfurl= uploadResultPdf.secure_url
+        await fs.promises.unlink(bookFilePath);
+    }
+
+    const updatedBook = await bookModel.findOneAndUpdate(
+        {_id:bookId},
+        {
+            name,
+            title,
+            genre,
+            coverImage: pdfurl? pdfurl: book.coverImage,
+            file: fileUrl? fileUrl: book.file
+        },
+        {new : true}
+    )
+
+    res.json(updatedBook)
+}
+export {createdBook, updateBook}
